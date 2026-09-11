@@ -11,7 +11,7 @@ export const commands = new Collection<string, Command>();
 const commandList: Command[] = [
   pingCommand,
   bleachLoreCommand,
-  bbsGuideCommand,
+  // bbsGuideCommand, // ปิดไว้ชั่วคราว รอทำระบบ RAG / ข้อมูลเกม BBS ล่าสุดแยก
   vsCommand,
   newsConfigCommand,
 ];

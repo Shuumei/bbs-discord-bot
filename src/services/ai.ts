@@ -3,19 +3,16 @@ import { GoogleGenAI } from "@google/genai";
 import { config } from "../config.js";
 
 const BLEACH_SPECIALIST_SYSTEM_PROMPT = `
-คุณคือ "BBS & Bleach Guild Companion" (เพื่อนรู้ใจสายบลีชประจำกิลด์) ประจำกิลด์ Bleach: Brave Souls!
-บุคลิกและสไตล์การสื่อสารของคุณ:
-1. **ความเป็นกันเองแบบเพื่อนคอเดียวกัน**: พูดจาเป็นกันเอง สนุกสนาน ตื่นเต้นกับสเกลพลังและฉากเท่ๆ เหมือนเพื่อนนั่งคุยกันในดิสคอร์ดกิลด์ (ใช้คำแทนตัวเองว่า "เรา" หรือ "บอทกิลด์", เรียกเพื่อนว่า "นาย", "สหาย", "พวกเรา", "หัวหน้ากิลด์" ฯลฯ) ไม่ทางการ ไม่เป็นหุ่นยนต์แข็งทื่อ
-2. **คลังความรู้ระดับ Bleach Lore Master**:
-   - รู้จริงและแม่นยำลึกซึ้งทั้ง มังงะ (686 ตอน), อนิเมะดั้งเดิม และ อนิเมะ บลีช เทพมรณะ: บทสงครามเลือดพันปี (TYBW) ทุกคอร์
-   - รู้จักนิยาย Canon อย่างละเอียด: โดยเฉพาะ Can't Fear Your Own World (CFYOW) เรื่องราวของชูเฮย์, โทคินาดะ สึนะยาชิโระ, ฮิโกเนะ, และประวัติศาสตร์ดั้งเดิมของ 5 ตระกูลใหญ่และราชันวิญญาณ รวมถึงนิยาย Spirits Are Forever With You (SAFWY) ที่มี เคนปาจิ อซาชิโระ และ เคนปาจิ คุรุยาชิกิ
-   - เข้าใจระบบพลังอย่างเป๊ะ: ชิไค (Shikai), บังไค (Bankai), ฮอลโลว์แฟกชัน/หน้ากากไวเซิร์ด, มูเก็ตสึ, บลูต (Blut Vene/Arterie), อักษรชริฟต์ (Schrift) ของหน่วยสเติร์นริตเตอร์ทั้ง 26 ตัว, ควินซี่ โวลสแตนดิก (Vollständig), ดาบฟันวิญญาณของอารันคาร์และ เรสสุเรคซิออน (Resurrección) รวมถึงร่าง เซกุนด้า เอตาปา (Segunda Etapa)
-   - สเกลพลัง VS Battles: วิเคราะห์อย่างมีตรรกะ มีหลักฐานอ้างอิงจากมังงะ/นิยาย/คำให้สัมภาษณ์ของอาจารย์ไทโตะ คุโบะ (Klub Outside) เช่น สเกลของ อิจิโกะร่างแท้จริง (True Shikai/True Bankai), ไอเซ็นร่างมุเก็น, ยูฮาบัคห์ (The Almighty), ยามาโมโตะ (ซังกะ โนะ ทาจิ), อิจิเบย์ (อิจิมงจิ), เค็นปาจิ, อุโนะฮานะ, ชุนซุย, เก็นริวไซ
-3. **ผู้เชี่ยวชาญเมต้าเกม Bleach: Brave Souls (BBS)**:
-   - เข้าใจระบบ Guild Quest (GQ) ทั้ง Normal, Hard และ Very Hard (Vortex strategies, Boosters, Damage Buffs, Killer Affinity, Status Ailments, Ignore Defense, Hitting Hidden Enemies)
-   - การปั้นตัวละคร: แนะนำ Link Slot (15/15/15, 20/20/20), โบนัสอบิลิตี้ (FSD, Damage to Stunned/Weakened, Long Stride, Weaken Defense), Transcendence (ATK/SP/Focus 3-star reroll)
-   - การบริหาร Spirit Orbs และตู้กาชา: วิเคราะห์ตู้ End of Month (EoM), Mid Month (MM), ตู้เทศกาล และตู้ฉลองครบรอบ (Anniversary) ว่าตัวไหนควรเปิด ตัวไหนเป็นกับดัก
-4. **ภาษา**: ใช้ภาษาไทยเป็นหลัก เขียนลื่นไหล ทับศัพท์ชื่อตัวละครและท่าไม้ตายได้อย่างถูกต้องและเป็นธรรมชาติ (เช่น เกทสึกะ เทนโช, เซ็มบงซากุระ คาเงโยชิ, ซังกะ โนะ ทาจิ, ไดกุเร็น เฮียวรินมารุ, คาโซริว)
+คุณคือ "เพื่อนรู้ใจสายบลีชประจำกิลด์" ในดิสคอร์ด Bleach!
+กฎเหล็กในการตอบ:
+1. **กระชับ สั้น ตรงประเด็นที่สุด (สำคัญมาก!)**:
+   - ตอบสไตล์เพื่อนพิมพ์คุยในดิสคอร์ด สั้น กระชับ ฉับไว ไม่เกริ่นเวิ่นเว้อ ไม่ตอบเป็นเรียงความยาว
+   - ความยาวคำตอบให้อยู่ในราวๆ 2-4 บรรทัด หรือไม่เกิน 1-2 ย่อหน้าสั้นๆ เนื้อๆ เน้นๆ
+2. **บุคลิกและความรู้ Lore Master**:
+   - เป็นกันเอง (ใช้ "เรา/นาย/สหาย/พวกเรา/ฮ่าๆ") อินกับบลีช
+   - แม่นยำเรื่องสเกลพลัง ชิไค, บังไค, ชริฟต์ (A-Z), โวลสแตนดิก, เรสสุเรคซิออน, มังงะ, อนิเมะ TYBW และนิยาย Canon (CFYOW / SAFWY)
+3. **กรณีคนถามเรื่องข้อมูล/เมต้าเกม BBS ในแชต**:
+   - ให้บอกสั้นๆ เป็นกันเองว่าเรื่องข้อมูลเกมเชิงลึกกำลังรออัปเดตระบบฐานข้อมูลกิลด์อยู่ แต่เรื่อง Lore/สเกลพลัง/เนื้อเรื่องบลีชจัดเต็มได้เลย!
 `.trim();
 
 class AIService {
@@ -43,10 +40,10 @@ class AIService {
     context?: { userName?: string; channelName?: string; history?: { role: "user" | "assistant"; content: string }[] }
   ): Promise<string> {
     const userContent = context?.userName
-      ? `[ผู้ถาม: ${context.userName} ในห้อง #${context.channelName || "guild-chat"}]: ${userPrompt}`
+      ? `[${context.userName}]: ${userPrompt}`
       : userPrompt;
 
-    // 1. ลองใช้ Google Gemini หากมีคีย์และถูกเลือก (หรือไม่มี OpenAI)
+    // 1. ลองใช้ Google Gemini
     if (this.geminiClient && (config.aiProvider === "gemini" || !this.openaiClient)) {
       try {
         const modelName = config.aiModel || "gemini-3.5-flash-lite";
@@ -56,8 +53,8 @@ class AIService {
           contents: userContent,
           config: {
             systemInstruction: BLEACH_SPECIALIST_SYSTEM_PROMPT,
-            temperature: 0.75,
-            maxOutputTokens: 1200,
+            temperature: 0.7,
+            maxOutputTokens: 400,
           },
         });
 
@@ -77,8 +74,8 @@ class AIService {
               contents: userContent,
               config: {
                 systemInstruction: BLEACH_SPECIALIST_SYSTEM_PROMPT,
-                temperature: 0.75,
-                maxOutputTokens: 1200,
+                temperature: 0.7,
+                maxOutputTokens: 400,
               },
             });
             const fallbackReply = fallbackRes.text?.trim();
@@ -99,7 +96,7 @@ class AIService {
         ];
 
         if (context?.history && context.history.length > 0) {
-          for (const msg of context.history.slice(-4)) {
+          for (const msg of context.history.slice(-3)) {
             messages.push({ role: msg.role, content: msg.content });
           }
         }
@@ -109,8 +106,8 @@ class AIService {
         const response = await this.openaiClient.chat.completions.create({
           model: config.aiModel || "gpt-4o-mini",
           messages,
-          temperature: 0.75,
-          max_tokens: 1200,
+          temperature: 0.7,
+          max_tokens: 400,
         });
 
         const reply = response.choices[0]?.message?.content?.trim();
@@ -127,16 +124,13 @@ class AIService {
 
   public async analyzeVSBattle(char1: string, char2: string, setting?: string): Promise<string> {
     const prompt = `
-ช่วยวิเคราะห์แมตช์จำลองการต่อสู้ (VS Battle) ระหว่าง:
-1. **${char1}**
-2. **${char2}**
-${setting ? `เงื่อนไข/สถานที่พิเศษ: ${setting}` : "เงื่อนไข: สภาพสมบูรณ์ที่สุด (Peak Form) สู้กันแบบเอาจริงในลานกว้าง (ไม่จำกัดพลัง)"}
+วิเคราะห์แมตช์จำลองการต่อสู้ (VS Battle) สั้นๆ กระชับ สไตล์เพื่อนคุยดิสคอร์ด:
+**${char1}** VS **${char2}**
+${setting ? `เงื่อนไข: ${setting}` : "เงื่อนไข: Peak Form เอาจริง"}
 
-กรุณาวิเคราะห์ตามโครงสร้างนี้:
-- 🗡️ **การเปรียบเทียบพลังและเทคนิค (Abilities & Arsenal)**: พลังวิญญาณ, ชิไค/บังไค/ชริฟต์/โวลสแตนดิก, ความเร็ว, กลยุทธ์
-- ⚔️ **จุดได้เปรียบและจุดแพ้ทาง (Matchup Dynamics)**: ตัวละครไหนเคาน์เตอร์พลังของอีกฝ่ายยังไง
-- 💥 **จำลองรูปเกมการต่อสู้ (Battle Scenario)**: เล่าฉากปะทะสั้นๆ ให้อารมณ์เหมือนอ่านมังงะ/อนิเมะ
-- 🏆 **สรุปผลการตัดสิน (Verdict & Winner)**: ใครชนะ (และโอกาสชนะประมาณกี่ %) พร้อมเหตุผลชี้ขาดแบบ Lore Bleach แท้ๆ
+ตอบให้สั้นกระชับ (ไม่เกิน 2-3 ย่อหน้า):
+- ⚔️ **จุดได้เปรียบ/แพ้ทาง**: สรุปจุดสำคัญแบบหมัดต่อหมัด
+- 🏆 **สรุปผู้ชนะ**: ใครชนะ (โอกาสชนะกี่ %) พร้อมเหตุผลชี้ขาดแบบ Lore Bleach สั้นๆ
 `.trim();
 
     return this.askSpecialist(prompt);

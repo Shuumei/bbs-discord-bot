@@ -1,3 +1,4 @@
+import http from "node:http";
 import { Client, GatewayIntentBits } from "discord.js";
 import { config, validateConfig } from "./config.js";
 import { setupReadyEvent } from "./events/ready.js";
@@ -24,6 +25,17 @@ async function bootstrap() {
     process.exit(1);
   }
 
+  // HTTP Health-Check Server (จำเป็นสำหรับ Render Free Web Service)
+  const port = process.env.PORT || 3000;
+  const httpServer = http.createServer((_req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("🗡️ Bleach: Brave Souls Discord Bot is alive and running!");
+  });
+
+  httpServer.listen(port, () => {
+    console.log(`🌐 Health check server listening on port ${port}`);
+  });
+
   // Initialize Discord Client with required Intents
   const client = new Client({
     intents: [
@@ -41,6 +53,7 @@ async function bootstrap() {
   // Graceful shutdown handling
   const handleShutdown = (signal: string) => {
     console.log(`\n🛑 Received ${signal}. Sealing Bankai and disconnecting bot...`);
+    httpServer.close();
     client.destroy();
     process.exit(0);
   };
