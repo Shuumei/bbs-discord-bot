@@ -24,7 +24,7 @@ export const config: BotConfig = {
   geminiApiKey: process.env.GEMINI_API_KEY || "",
   openaiApiKey: process.env.OPENAI_API_KEY || process.env.LLM_API_KEY || "",
   openaiBaseUrl: process.env.OPENAI_BASE_URL || undefined,
-  aiModel: process.env.AI_MODEL || (aiProvider === "gemini" ? "gemini-2.5-flash-lite" : "gpt-4o-mini"),
+  aiModel: process.env.AI_MODEL || (aiProvider === "gemini" ? "gemini-3.5-flash-lite" : "gpt-4o-mini"),
   newsChannelId: process.env.NEWS_CHANNEL_ID || undefined,
   newsCronSchedule: process.env.NEWS_CRON_SCHEDULE || "0 10 * * *",
 };

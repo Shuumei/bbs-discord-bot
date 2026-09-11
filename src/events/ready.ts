@@ -1,8 +1,8 @@
-import { Client, ActivityType } from "discord.js";
+import { Client, ActivityType, Events } from "discord.js";
 import { newsService } from "../services/news.js";
 
 export function setupReadyEvent(client: Client) {
-  client.once("ready", (c) => {
+  client.once(Events.ClientReady, (c) => {
     console.log(`🗡️ [Bankai Activated] Logged in as ${c.user.tag}!`);
     console.log(`📡 Ready in ${c.guilds.cache.size} server(s).`);
 

@@ -49,7 +49,7 @@ class AIService {
     // 1. ลองใช้ Google Gemini หากมีคีย์และถูกเลือก (หรือไม่มี OpenAI)
     if (this.geminiClient && (config.aiProvider === "gemini" || !this.openaiClient)) {
       try {
-        const modelName = config.aiModel || "gemini-2.5-flash-lite";
+        const modelName = config.aiModel || "gemini-3.5-flash-lite";
 
         const response = await this.geminiClient.models.generateContent({
           model: modelName,
@@ -65,12 +65,15 @@ class AIService {
         if (reply) return reply;
       } catch (error: any) {
         console.error("[Gemini Error]:", error?.message || error);
-        // หาก error จากชื่อโมเดล ลอง fallback ไป gemini-2.0-flash-lite
-        if (config.aiModel !== "gemini-2.0-flash-lite") {
+        
+        // Fallback models หากชื่อโมเดลแรกไม่พบ
+        const fallbackCandidates = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"];
+        for (const candidate of fallbackCandidates) {
+          if (candidate === config.aiModel) continue;
           try {
-            console.log("[Gemini] Trying fallback model: gemini-2.0-flash-lite...");
+            console.log(`[Gemini] Trying fallback model: ${candidate}...`);
             const fallbackRes = await this.geminiClient.models.generateContent({
-              model: "gemini-2.0-flash-lite",
+              model: candidate,
               contents: userContent,
               config: {
                 systemInstruction: BLEACH_SPECIALIST_SYSTEM_PROMPT,
@@ -80,8 +83,8 @@ class AIService {
             });
             const fallbackReply = fallbackRes.text?.trim();
             if (fallbackReply) return fallbackReply;
-          } catch (e) {
-            console.error("[Gemini Fallback Error]:", e);
+          } catch (e: any) {
+            console.warn(`[Gemini Fallback ${candidate} Failed]:`, e?.message || e);
           }
         }
         return `⚠️ ขออภัยด้วยสหาย แรงดันวิญญาณในระบบ Gemini เกิดขัดข้อง (${error?.message || "Gemini API Error"})\nลองเช็ก API Key หรือถามใหม่อีกครั้งนะ!`;
