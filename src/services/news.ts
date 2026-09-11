@@ -142,15 +142,21 @@ class NewsService {
       this.scheduledTask.stop();
     }
 
-    this.scheduledTask = cron.schedule(cronSchedule, async () => {
-      console.log("[NewsService] Running scheduled news broadcast...");
-      const result = await this.broadcastNews(client);
-      if (result.success) {
-        console.log(`[NewsService] Successfully broadcasted ${result.count} news article(s).`);
-      } else {
-        console.warn(`[NewsService] Scheduled broadcast skipped or failed: ${result.error}`);
+    this.scheduledTask = cron.schedule(
+      cronSchedule,
+      async () => {
+        console.log("[NewsService] Running scheduled news broadcast...");
+        const result = await this.broadcastNews(client);
+        if (result.success) {
+          console.log(`[NewsService] Successfully broadcasted ${result.count} news article(s).`);
+        } else {
+          console.warn(`[NewsService] Scheduled broadcast skipped or failed: ${result.error}`);
+        }
+      },
+      {
+        timezone: "Asia/Bangkok",
       }
-    });
+    );
   }
 }
 
