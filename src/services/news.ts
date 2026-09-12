@@ -254,9 +254,13 @@ class NewsService {
         }
       )
       .setFooter({
-        text: `Bleach & BBS Companion • ที่มา: ${article.sourceName || "Official News"}`,
+        text: `Bleach & BBS Companion • ที่มา: ${article.sourceName || "Official News"} • ID: ${article.id}`,
       })
       .setTimestamp(article.publishedAt);
+
+    if (article.sourceUrl) {
+      embed.setURL(article.sourceUrl);
+    }
 
     if (article.bannerImage) {
       embed.setImage(article.bannerImage);
@@ -287,17 +291,55 @@ class NewsService {
 
       const textChannel = channel as TextChannel;
 
-      // 1. ดึงข่าวสารจริงล่าสุด
+      // 1. ดึงประวัติข้อความล่าสุด 50 ข้อความจากช่อง Discord โดยตรง เพื่อตรวจข่าวซ้ำแบบ Real-time แม้รีสตาร์ตบอท
+      const recentMessages = await textChannel.messages.fetch({ limit: 50 }).catch(() => null);
+      const sentUrlsInChannel = new Set<string>();
+      const sentTitlesInChannel = new Set<string>();
+      const sentIdsInChannel = new Set<string>();
+
+      if (recentMessages) {
+        for (const msg of recentMessages.values()) {
+          // ตรวจสอบข้อความทั้งหมดที่บอทส่ง หรือมี embed ข่าวสาร
+          for (const embed of msg.embeds) {
+            if (embed.url) sentUrlsInChannel.add(embed.url);
+            if (embed.title) sentTitlesInChannel.add(embed.title.trim().toLowerCase());
+
+            if (embed.footer?.text) {
+              const idMatch = embed.footer.text.match(/ID:\s*([a-f0-9]+)/i);
+              if (idMatch) {
+                sentIdsInChannel.add(idMatch[1]);
+                this.sentNewsIds.add(idMatch[1]); // ซิงก์ประวัติย้อนหลังลง Memory อัตโนมัติ
+              }
+            }
+
+            for (const field of embed.fields) {
+              const match = field.value.match(/\((https?:\/\/[^\s)]+)\)/);
+              if (match) sentUrlsInChannel.add(match[1]);
+            }
+          }
+        }
+      }
+
+      // 2. ดึงข่าวสารจริงล่าสุด
       const freshNews = await this.fetchRealNews(5);
 
-      // 2. กรองเฉพาะข่าวที่ "ยังไม่เคยส่ง" (Deduplication)
+      // ฟังก์ชันเช็กว่าข่าวนี้เคยส่งไปแล้วหรือไม่ (เช็กทั้ง Local ID, Channel URL, และ Channel Title)
+      const isArticleAlreadySent = (article: NewsArticle): boolean => {
+        if (this.isNewsSent(article.id)) return true;
+        if (sentIdsInChannel.has(article.id)) return true;
+        if (article.sourceUrl && sentUrlsInChannel.has(article.sourceUrl)) return true;
+        return false;
+      };
+
+      // 3. กรองเฉพาะข่าวที่ "ยังไม่เคยส่ง" (Deduplication)
       let articlesToSend: NewsArticle[] = [];
 
       if (options?.force) {
-        // หากผู้ใช้สั่ง Force ผ่านคำสั่งทดสอบ ให้หยิบข่าวล่าสุดมาส่ง
+        // หากผู้ใช้สั่ง Force ผ่านคำสั่งทดสอบ ให้หยิบข่าวแรกมาส่งเสมอ
         articlesToSend = freshNews.slice(0, 1);
       } else {
-        articlesToSend = freshNews.filter((article) => !this.isNewsSent(article.id)).slice(0, 2);
+        // ดึงเฉพาะข่าวที่ยังไม่เคยส่ง (ส่งครั้งละ 1 ข่าวล่าสุด เพื่อไม่ให้สแปมห้อง)
+        articlesToSend = freshNews.filter((article) => !isArticleAlreadySent(article)).slice(0, 1);
       }
 
       // หากไม่มีข่าวใหม่เลย ข้ามการส่งอัตโนมัติ ไม่สแปมห้อง
