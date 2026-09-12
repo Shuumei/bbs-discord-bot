@@ -151,6 +151,90 @@ ${setting ? `เงื่อนไข: ${setting}` : "เงื่อนไข: 
     return this.askSpecialist(prompt);
   }
 
+  public async summarizeAndTranslateNews(
+    title: string,
+    rawSnippet: string,
+    sourceName?: string
+  ): Promise<{
+    thaiTitle: string;
+    summary: string;
+    category: "ANIME_TYBW" | "BBS_UPDATE" | "BBS_GACHA" | "COMMUNITY";
+  }> {
+    // กำหนดหมวดหมู่ fallback จาก keywords
+    const lower = `${title} ${rawSnippet}`.toLowerCase();
+    let defaultCategory: "ANIME_TYBW" | "BBS_UPDATE" | "BBS_GACHA" | "COMMUNITY" = "BBS_UPDATE";
+    if (lower.includes("gacha") || lower.includes("summon") || lower.includes("step-up") || lower.includes("banner")) {
+      defaultCategory = "BBS_GACHA";
+    } else if (lower.includes("anime") || lower.includes("tybw") || lower.includes("blood war") || lower.includes("cour") || lower.includes("episode")) {
+      defaultCategory = "ANIME_TYBW";
+    } else if (lower.includes("guild") || lower.includes("community") || lower.includes("discord") || lower.includes("campaign")) {
+      defaultCategory = "COMMUNITY";
+    }
+
+    if (!this.isConfigured()) {
+      return {
+        thaiTitle: title,
+        summary: rawSnippet || "ติดตามรายละเอียดเพิ่มเติมได้จากลิงก์แหล่งข่าวต้นทาง",
+        category: defaultCategory,
+      };
+    }
+
+    const prompt = `
+คุณคือผู้สรุปข่าวสาร Bleach & Bleach: Brave Souls (BBS) ประจำกิลด์ Discord
+กรุณาสรุปข่าวสารภาษาอังกฤษต่อไปนี้ให้ออกมาเป็นภาษาไทย กระชับ น่าอ่าน เข้าใจง่าย สไตล์เพื่อนกิลด์ดิสคอร์ด
+
+ข้อมูลข่าว:
+- หัวข้อข่าว: ${title}
+- รายละเอียด: ${rawSnippet}
+- แหล่งข่าว: ${sourceName || "Official / Gaming News"}
+
+กรุณาตอบเป็น JSON รูปแบบนี้เท่านั้น (ไม่ต้องใส่ markdown code block หรือคำเกริ่นใดๆ):
+{
+  "thaiTitle": "หัวข้อข่าวภาษาไทยที่กระชับและน่าสนใจ พร้อมใส่อีโมจิที่เหมาะสม",
+  "summary": "สรุปเนื้อหาสำคัญ 2-3 บรรทัด มีใจความชัดเจนว่ามีอัปเดตอะไร หรือมีอะไรน่าสนใจสำหรับผู้เล่น/แฟนอนิเมะ",
+  "category": "ANIME_TYBW หรือ BBS_UPDATE หรือ BBS_GACHA หรือ COMMUNITY"
+}
+`.trim();
+
+    try {
+      let rawResult = "";
+      if (this.geminiClient && (config.aiProvider === "gemini" || !this.openaiClient)) {
+        const response = await this.geminiClient.models.generateContent({
+          model: config.aiModel || "gemini-2.5-flash",
+          contents: prompt,
+        });
+        rawResult = response.text || "";
+      } else if (this.openaiClient) {
+        const response = await this.openaiClient.chat.completions.create({
+          model: config.aiModel || "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.5,
+        });
+        rawResult = response.choices[0]?.message?.content || "";
+      }
+
+      // แกะ JSON ออกจากข้อความตอบกลับ
+      const jsonMatch = rawResult.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        const validCategories = ["ANIME_TYBW", "BBS_UPDATE", "BBS_GACHA", "COMMUNITY"];
+        return {
+          thaiTitle: parsed.thaiTitle || title,
+          summary: parsed.summary || rawSnippet,
+          category: validCategories.includes(parsed.category) ? parsed.category : defaultCategory,
+        };
+      }
+    } catch (err: any) {
+      console.warn("[AIService News Summarization Fallback]:", err?.message || err);
+    }
+
+    return {
+      thaiTitle: title,
+      summary: rawSnippet || "สามารถคลิกอ่านรายละเอียดทั้งหมดได้ที่ลิงก์แหล่งที่มา",
+      category: defaultCategory,
+    };
+  }
+
   private getMockResponse(prompt: string): string {
     return (
       `🗡️ **[Bleach & BBS Specialist]**\n\n` +

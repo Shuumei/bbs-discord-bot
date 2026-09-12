@@ -12,6 +12,9 @@ dist/
 logs/
 *.log
 
+# Bot Data & State
+data/
+
 # OS Metadata
 .DS_Store
 Thumbs.db

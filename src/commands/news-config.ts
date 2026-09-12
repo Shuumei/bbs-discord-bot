@@ -22,13 +22,20 @@ export const newsConfigCommand: Command = {
     .addBooleanOption((option) =>
       option
         .setName("trigger_test")
-        .setDescription("ต้องการทดสอบส่งข่าวล่าสุดเข้าห้องทันทีหรือไม่?")
+        .setDescription("ต้องการทดสอบส่งข่าวจริงเข้าห้องทันทีหรือไม่?")
+        .setRequired(false)
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName("force_resend")
+        .setDescription("บังคับส่งข่าวล่าสุดซ้ำแม้เคยส่งไปแล้วหรือไม่? (สำหรับทดสอบหน้าตาการ์ด)")
         .setRequired(false)
     ),
 
   async execute(interaction) {
     const channel = interaction.options.getChannel("channel");
     const triggerTest = interaction.options.getBoolean("trigger_test");
+    const forceResend = interaction.options.getBoolean("force_resend");
 
     if (channel) {
       newsService.setChannelId(channel.id);
@@ -39,15 +46,23 @@ export const newsConfigCommand: Command = {
     if (triggerTest) {
       await interaction.deferReply({ ephemeral: true });
 
+      const targetId = channel ? channel.id : currentChannelId || interaction.channelId;
       const result = await newsService.broadcastNews(
         interaction.client,
-        channel ? channel.id : currentChannelId || interaction.channelId
+        targetId,
+        { force: Boolean(forceResend) }
       );
 
       if (result.success) {
-        await interaction.editReply({
-          content: `✅ ส่งข่าวสารล่าสุดเรียบร้อยแล้วไปยังห้อง <#${channel ? channel.id : currentChannelId || interaction.channelId}>`,
-        });
+        if (result.count === 0 && result.reason === "NO_NEW_NEWS") {
+          await interaction.editReply({
+            content: `ℹ️ **ไม่มีข่าวใหม่ที่ยังไม่เคยส่ง**: ข่าวจริงล่าสุดได้ถูกแจ้งเตือนไปก่อนหน้านี้แล้ว ระบบจึงข้ามการส่งซ้ำเพื่อป้องกันการสแปมห้อง\n👉 หากต้องการทดสอบส่งข่าวล่าสุดซ้ำ ให้ใช้คำสั่ง: \`/news-config trigger_test:True force_resend:True\``,
+          });
+        } else {
+          await interaction.editReply({
+            content: `✅ บรอดแคสต์ข่าวจริงเรียบร้อยแล้ว (${result.count} ข่าว) ไปยังห้อง <#${targetId}>${forceResend ? " *(โหมด Force Test)*" : ""}`,
+          });
+        }
       } else {
         await interaction.editReply({
           content: `❌ การส่งข่าวขัดข้อง: ${result.error}`,
@@ -55,6 +70,11 @@ export const newsConfigCommand: Command = {
       }
       return;
     }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    // ดึงตัวอย่างข่าวจริงล่าสุด 3 ข่าว
+    const realNews = await newsService.fetchRealNews(3);
 
     const embed = new EmbedBuilder()
       .setColor(0x3498db)
@@ -66,20 +86,23 @@ export const newsConfigCommand: Command = {
       )
       .addFields(
         {
-          name: "📢 ตัวอย่างข่าวสารในคลัง",
-          value: newsService
-            .getLatestNews(3)
-            .map((item, idx) => `${idx + 1}. ${item.title}`)
-            .join("\n"),
+          name: "📢 ตัวอย่างข่าวสารสดล่าสุดในคลัง (Live Feeds)",
+          value: realNews.length > 0
+            ? realNews.map((item, idx) => `${idx + 1}. [${item.title.slice(0, 80)}](${item.sourceUrl || "#"})`).join("\n")
+            : "ยังไม่มีข้อมูลข่าวสาร",
+        },
+        {
+          name: "🛡️ ระบบป้องกันข่าวซ้ำ (Deduplication)",
+          value: "ระบบบันทึกข่าวที่เคยส่งแล้วอัตโนมัติ จะส่งเฉพาะข่าวใหม่เท่านั้นทุก 10:00 น. ไม่ส่งข่าวเดิมซ้ำแน่นอน!",
         },
         {
           name: "💡 คำแนะนำ",
-          value: "สามารถใช้ `/news-config trigger_test:True` เพื่อทดสอบส่งการ์ดข่าวสารได้ทันที",
+          value: "- ใช้ `/news-config trigger_test:True` เพื่อลองส่งเฉพาะข่าวใหม่\n- ใช้ `/news-config trigger_test:True force_resend:True` เพื่อทดสอบส่งการ์ดข่าวล่าสุดทันที",
         }
       )
-      .setFooter({ text: "Bleach & BBS Guild Companion" })
+      .setFooter({ text: "Bleach & BBS Guild Companion • Live News Engine" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.editReply({ embeds: [embed] });
   },
 };

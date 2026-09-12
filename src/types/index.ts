@@ -25,4 +25,5 @@ export interface NewsArticle {
   sourceUrl?: string;
   bannerImage?: string;
   publishedAt: Date;
+  sourceName?: string;
 }
