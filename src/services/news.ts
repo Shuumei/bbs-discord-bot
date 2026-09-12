@@ -213,7 +213,7 @@ class NewsService {
     return this.articles.slice(0, limit);
   }
 
-  public createNewsEmbed(article: NewsArticle): EmbedBuilder {
+  public createNewsEmbed(article: NewsArticle, iconUrl?: string): EmbedBuilder {
     const categoryColors: Record<NewsArticle["category"], number> = {
       ANIME_TYBW: 0x9b59b6, // ม่วงเข้มโทนสงครามเลือดพันปี
       BBS_UPDATE: 0xe67e22, // ส้มสดใสโทน BBS
@@ -228,13 +228,18 @@ class NewsService {
       COMMUNITY: "🛡️ Guild Bulletin",
     };
 
+    const authorData: { name: string; iconURL?: string } = {
+      name: `BBS Guild News • ${categoryLabels[article.category]}`,
+    };
+
+    if (iconUrl) {
+      authorData.iconURL = iconUrl;
+    }
+
     const embed = new EmbedBuilder()
       .setColor(categoryColors[article.category] || 0xff4500)
       .setTitle(article.title)
-      .setAuthor({
-        name: `BBS Guild News • ${categoryLabels[article.category]}`,
-        iconURL: "https://cdn.discordapp.com/emojis/104523456789012345.webp",
-      })
+      .setAuthor(authorData)
       .setDescription(`**${article.summary}**\n\n${article.details}`)
       .addFields(
         {
@@ -317,7 +322,8 @@ class NewsService {
           console.warn("[NewsService] AI summary skipped:", e?.message || e);
         }
 
-        const embed = this.createNewsEmbed(article);
+        const botAvatarUrl = client.user?.displayAvatarURL();
+        const embed = this.createNewsEmbed(article, botAvatarUrl);
         await textChannel.send({
           content: "📢 **[ประกาศข่าวสารด่วนจาก Soul Society & BBS Guild]**",
           embeds: [embed],
